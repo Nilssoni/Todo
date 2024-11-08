@@ -15,7 +15,7 @@ const openDb = () => {
         user: 'postgres',
         host: 'localhost',
         database: 'todo',
-        password: '7ygv7ujm',
+        password: '',
         port: 5432
     })
     return pool
