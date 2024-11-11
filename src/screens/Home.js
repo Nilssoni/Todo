@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import './App.css';
+import { useUser } from '../context/useUser';
+import './Home.css';
 import axios from 'axios';
-import Row from './components/Row';
+import Row from '../components/Row';
 
-const url = 'http://localhost:3001'
+const url = process.env.REACT_APP_API_URL;
 
-function App() {
-  const [task, setTask] = useState('')
-  const [ tasks, setTasks] = useState([])
+function Home() {
+  const { user } = useUser();
+  const [task, setTask] = useState('');
+  const [ tasks, setTasks] = useState([]);
 
   useEffect(() => {
     axios.get(url)
@@ -19,9 +21,11 @@ function App() {
   }, [])
 
   const addTask = () => {
-    axios.post(url + '/create',{
+    const headers = {headers: {Authorization:user.token}};
+
+    axios.post(url + '/create', {
       description: task
-    })
+    },headers)
     .then(response => {
     setTasks([...tasks,{id: response.data.id,description: task}])
     setTask('')
@@ -31,7 +35,8 @@ function App() {
   }
 
   const deleteTask = (id) => {
-    axios.delete(url + '/delete/' + id)
+    const headers = {headers: {Authorization:user.token}};
+    axios.delete(url + '/delete/' + id,headers)
       .then(response => {
         const withoutRemoved = tasks.filter((item) => item.id !== id)
         setTasks(withoutRemoved)
@@ -42,7 +47,7 @@ function App() {
 
   return (
     <div id='container'>
-      <h3>Todo list</h3>
+      <h3>Welcome user {user.email} to Todo list</h3>
       <form>
         <input placeholder='Add new task' 
         value={task}
@@ -65,4 +70,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;

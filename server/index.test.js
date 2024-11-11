@@ -35,7 +35,7 @@ describe('POST task',() => {
                 'Content-Type':'application/json',
                 'Authorization':`Bearer ${token}`
             },
-            body: JSON.stringify({'description':'Task from unit test'})
+            body: JSON.stringify({'description':'Task from unit test TESTING'})
         })
         const data = await response.json()
         expect(response.status).to.equal(200)
@@ -95,8 +95,7 @@ describe('DELETE task',() => {
     })
 })
 
-describe('POST register',() => {
-    
+describe('POST register',() => {    
 
     it ('should register with valid email and password',async () => {
         const email = 'register@foo.com';
