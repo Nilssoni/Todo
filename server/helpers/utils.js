@@ -1,2 +1,6 @@
-const emptyOrRows = (result) => (result ? result.rows : []);
-export default emptyOrRows;
+const emptyOrRows = (result) => {
+    if(!result) return []
+    return result.rows
+}
+
+export { emptyOrRows }
