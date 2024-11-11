@@ -24,7 +24,7 @@ router.post('/register', (req, res, next) => {
             );
         }catch(error){
             return next(error);
-        }        
+        }
     });
 });
 
