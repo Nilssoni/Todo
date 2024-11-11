@@ -1,11 +1,17 @@
 import { expect } from 'chai';
+import { initializeTestDb, insertTestUser, getToken } from './helpers/test.js';
+import  response  from 'express';
 
 const base_url = 'http://localhost:3001';
 
+before(async () => {
+    await initializeTestDb(); // Set up the test database
+});
+
 describe('GET Tasks', () => {
     it('should get all tasks', async() => {
-        const response = await fetch(base_url)
-        const data = await response.json()
+        const response = await fetch(base_url + '/tasks');
+        const data = await response.json();
 
         expect(response.status).to.equal(200)
         expect(data).to.be.an('array').that.is.not.empty
@@ -14,11 +20,20 @@ describe('GET Tasks', () => {
 })
 
 describe('POST task',() => {
+    let token; // Store JWT for authorization
+    before(async() => {
+        const email = 'post@foo.com';
+        const password = 'post123';
+        await insertTestUser(email, password);
+        token = getToken(email);
+    })
+
     it('should post a task', async() => {
-        const response = await fetch(base_url + '/create',{
+        const response = await fetch(base_url + '/tasks/create',{
             method: 'post',
             headers: {
-                'Content-Type':'application/json'
+                'Content-Type':'application/json',
+                'Authorization':`Bearer ${token}`
             },
             body: JSON.stringify({'description':'Task from unit test'})
         })
@@ -29,12 +44,13 @@ describe('POST task',() => {
     })
 
     it('should not post a task without description', async() => {
-        const response = await fetch(base_url + '/create',{
+        const response = await fetch(base_url + '/tasks/create',{
             method: 'post',
             headers: {
-                'Content-Type':'application/json'
+                'Content-Type':'application/json',
+                'Authorization':`Bearer ${token}`
             },
-            body: JSON.stringify({'description':null})
+            body: JSON.stringify({description:null})
         })
         const data = await response.json()
         expect(response.status).to.equal(500)
@@ -44,9 +60,20 @@ describe('POST task',() => {
 })
 
 describe('DELETE task',() => {
+    let token; // Store JWT for authorization
+    before(async() => {
+        const email = 'delete@foo.com';
+        const password = 'password123';
+        insertTestUser(email, password);
+        token = getToken(email);
+    })
+
     it('should delete a task', async() =>{
-        const response = await fetch(base_url + '/delete/1', {
-            method: 'delete'
+        const response = await fetch(base_url + '/tasks/delete/1', {
+            method: 'delete',
+            headers: {
+                'Authorization':`Bearer ${token}`
+            }
         })
         const data = await response.json()
         expect(response.status).to.equal(200)
@@ -55,12 +82,61 @@ describe('DELETE task',() => {
     })
 
     it('should not delete a task with SQL injection', async() => {
-        const response = await fetch(base_url + '/delete/id=0 or id > 0',{
-            method: 'delete'
+        const response = await fetch(base_url + '/tasks/delete/id=0 or id > 0',{
+            method: 'delete',
+            headers: {
+                'Authorization':`Bearer ${token}`
+            }
         })
         const data = await response.json()
         expect(response.status).to.equal(500)
         expect(data).to.be.an('object')
         expect(data).to.include.all.keys('error')
+    })
+})
+
+describe('POST register',() => {
+    
+
+    it ('should register with valid email and password',async () => {
+        const email = 'register@foo.com';
+        const password = 'register123';
+        const response = await fetch(base_url + '/user/register', {
+            method: 'post',
+            headers: {
+                'Content-Type':'application/json'
+            },
+            body: JSON.stringify({email, password})
+        })
+        const data = await response.json()
+        expect(response.status).to.equal(201, data.error)
+        expect(data).to.be.an('object')
+        expect(data).to.include.all.keys('id','email')
+    })
+})
+
+describe('POST login',() => {
+    
+    let token; // Store JWT for authorization
+    const email = 'login@foo.com';
+    const password = 'login123';
+
+    before(async() => {
+        await insertTestUser(email, password);
+        token = await getToken(email);
+    })
+    
+    it('should login with valid credentials',async () => {
+        const response = await fetch(base_url + '/user/login',{
+            method: 'post',
+            headers: {
+                'Content-Type':'application/json'
+            },
+            body: JSON.stringify({email, password})
+        })
+        const data = await response.json()
+        expect(response.status).to.equal(200, data.error)
+        expect(data).to.be.an('object')
+        expect(data).to.include.all.keys('id','email','token')
     })
 })
